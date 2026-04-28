@@ -1,0 +1,69 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Rust/Cargo
+target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Tauri
+src-tauri/target/
+src-tauri/Cargo.lock
+src-tauri/*.pdb
+src-tauri/cli/target/
+src-tauri/cli/Cargo.lock
+src-tauri/cli/*.pdb
+
+# Test files
+*.mp4
+*.wav
+*.m4a
+*.mp3
+*.aac
+*.flac
+
+# Resources
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ttf
+*.otf
+*.eot
+*.woff
+*.woff2
+*.ttc
+*.svg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Trae IDE
+.trae/
+
+# Nested git repository
+01/

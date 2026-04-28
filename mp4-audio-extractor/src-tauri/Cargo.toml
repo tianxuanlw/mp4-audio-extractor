@@ -1,0 +1,38 @@
+# ===================================================================
+# Cargo.toml — Tauri 后端的 Rust 项目配置
+# ===================================================================
+#
+# 本文件定义 Tauri 后端（src-tauri/）的 Rust 依赖和编译选项。
+#
+# [lib] 段：
+#   crate-type 包含三种类型：
+#     lib       — Rust 库（供其他 Rust 项目调用）
+#     cdylib    — C 动态库（Tauri 运行时加载）
+#     staticlib — C 静态库（移动端需要）
+#
+# [[bin]] 段：
+#   定义二进制产物入口：src/main.rs（启动 Tauri 应用的主函数）
+
+[package]
+name = "mp4-audio-extractor"
+version = "0.1.0"
+edition = "2021"        # Rust 2021 Edition
+
+[lib]
+name = "mp4_audio_extractor_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[[bin]]
+name = "mp4-audio-extractor"
+path = "src/main.rs"
+
+# ---- 构建时依赖 ----
+[build-dependencies]
+tauri-build = { version = "2", features = [] }  # Tauri 构建脚本支持
+
+# ---- 运行时依赖 ----
+[dependencies]
+tauri = { version = "2", features = [] }         # Tauri 核心框架
+tauri-plugin-dialog = "2"                        # 原生文件对话框插件
+serde = { version = "1", features = ["derive"] }  # 序列化/反序列化框架（#[derive(Serialize)] 等）
+serde_json = "1"                                  # JSON 处理（json! 宏、to_string）

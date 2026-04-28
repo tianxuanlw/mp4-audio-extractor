@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<!--
+  ===================================================================
+  index.html — MP4 音频提取器 前端页面结构
+  ===================================================================
+
+  本文件定义了应用的整个 DOM 树，采用单页双视图架构：
+
+  【mainView（主页面）】包含三个功能卡片：
+    1. 📼 视频提取卡片 — 选择 MP4 → 查看音频信息 → 提取 WAV
+    2. 🔄 音频转换卡片 — 选择音频 → 三选一目标格式 → 格式转换
+    3. 🔬 音频分析导航卡片 — 点击跳转到分析详情页
+
+  【analysisView（分析详情页）】包含：
+    - 返回导航栏
+    - 拖拽区域（同时支持点击选择和拖拽放入）
+    - 可选文字输入框
+    - 分析按钮 + 状态提示
+    - 5 个 Canvas 图表容器（波形/频谱/音高/响度/文字时序）
+
+  样式由 styles.css 控制，交互逻辑由 main.js 控制。
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MP4 音频提取器</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- .container 是整个应用的根容器，控制最大宽度和居中 -->
+  <div class="container">
+
+    <!-- ==================== 主页面视图 ==================== -->
+    <div id="mainView">
+      <!-- 页面头部：标题 + 副标题 -->
+      <div class="header">
+        <h1>🎵 MP4 音频提取器</h1>
+        <p class="subtitle">无损提取 MP4 视频中的音频流 · 音频格式转换</p>
+      </div>
+
+      <!-- ===== 卡片1：视频提取 ===== -->
+      <div class="main-card">
+        <div class="section-title">📼 视频提取</div>
+
+        <!-- 文件选择区域 -->
+        <div class="file-section" id="fileSection">
+          <!-- 未选择时的占位区（虚线框） -->
+          <div class="file-placeholder" id="filePlaceholder">
+            <span class="icon">📁</span>
+            <span>选择一个 MP4 视频文件</span>
+          </div>
+          <!-- 已选择时的文件名显示条 -->
+          <div class="file-selected hidden" id="fileSelected">
+            <span class="file-icon">🎬</span>
+            <span class="file-name" id="fileName"></span>
+            <button class="btn-clear" id="btnClear" title="清除选择">✕</button>
+          </div>
+          <button class="btn btn-outline" id="btnSelect">选择文件</button>
+        </div>
+
+        <!-- 音频信息面板（选择文件后显示） -->
+        <div class="audio-info hidden" id="audioInfo">
+          <h3>音频信息</h3>
+          <div class="info-grid" id="infoGrid"></div>
+        </div>
+
+        <!-- 操作按钮区域 -->
+        <div class="actions">
+          <button class="btn btn-primary" id="btnExtract" disabled>
+            <span id="btnExtractText">提取音频</span>
+            <span class="spinner hidden" id="spinner"></span> <!-- 加载旋转动画 -->
+          </button>
+        </div>
+
+        <!-- 状态提示（成功/错误） -->
+        <div class="status hidden" id="statusArea">
+          <div class="status-icon" id="statusIcon"></div>
+          <div class="status-text" id="statusText"></div>
+          <button class="btn-open-folder hidden" id="btnOpenFolder">打开所在文件夹</button>
+        </div>
+      </div>
+
+      <!-- ===== 卡片2：音频转换 ===== -->
+      <div class="main-card convert-card">
+        <div class="section-title">🔄 音频格式转换</div>
+
+        <div class="file-section" id="convertFileSection">
+          <div class="file-placeholder" id="convertFilePlaceholder">
+            <span class="icon">🎵</span>
+            <span>选择一个音频文件 (WAV / FLAC / MP3)</span>
+          </div>
+          <div class="file-selected hidden" id="convertFileSelected">
+            <span class="file-icon">🎵</span>
+            <span class="file-name" id="convertFileName"></span>
+            <button class="btn-clear" id="btnConvertClear" title="清除选择">✕</button>
+          </div>
+          <button class="btn btn-outline" id="btnConvertSelect">选择文件</button>
+        </div>
+
+        <!-- 目标格式选择器：三个 radio 互斥选项 -->
+        <div class="format-selector" id="formatSelector">
+          <h3>目标格式</h3>
+          <div class="format-options">
+            <!-- WAV — 默认选中 -->
+            <label class="format-option">
+              <input type="radio" name="convertFormat" value="wav" checked />
+              <span class="format-label">WAV</span>
+              <span class="format-desc">无压缩，兼容性最佳</span>
+            </label>
+            <!-- FLAC -->
+            <label class="format-option">
+              <input type="radio" name="convertFormat" value="flac" />
+              <span class="format-label">FLAC</span>
+              <span class="format-desc">无损压缩，归档首选</span>
+            </label>
+            <!-- MP3 -->
+            <label class="format-option">
+              <input type="radio" name="convertFormat" value="mp3" />
+              <span class="format-label">MP3</span>
+              <span class="format-desc">高音质有损，体积最小</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="btnConvert" disabled>
+            <span id="btnConvertText">转换格式</span>
+            <span class="spinner hidden" id="convertSpinner"></span>
+          </button>
+        </div>
+
+        <div class="status hidden" id="convertStatusArea">
+          <div class="status-icon" id="convertStatusIcon"></div>
+          <div class="status-text" id="convertStatusText"></div>
+          <button class="btn-open-folder hidden" id="btnConvertOpenFolder">打开所在文件夹</button>
+        </div>
+      </div>
+
+      <!-- ===== 卡片3：音频分析导航 ===== -->
+      <div class="main-card nav-card" id="navAnalysis">
+        <div class="nav-card-inner">
+          <span class="nav-icon">🔬</span>
+          <span class="nav-label">音频分析</span>
+          <span class="nav-desc">频谱 · 音高 · 振幅 · 文字时序</span>
+        </div>
+        <span class="nav-arrow">→</span>
+      </div>
+    </div>
+
+    <!-- ==================== 分析详情页视图 ==================== -->
+    <div id="analysisView" class="hidden">
+      <!-- 顶部导航栏 -->
+      <div class="analysis-nav">
+        <button class="btn-back" id="btnBack">← 返回</button>
+        <span class="analysis-title">🔬 音频分析</span>
+      </div>
+
+      <!-- 分析控制卡片 -->
+      <div class="main-card analysis-card">
+        <!-- 拖拽 / 选择文件区域 -->
+        <div class="analysis-dropzone" id="analysisDropzone">
+          <!-- 拖拽占位区（虚线框） -->
+          <div class="dropzone-placeholder" id="dropzonePlaceholder">
+            <span class="dropzone-icon">📂</span>
+            <span>拖拽音频文件到此处</span>
+            <span class="dropzone-hint">支持 WAV / FLAC / MP3</span>
+          </div>
+          <!-- 已选择文件显示 -->
+          <div class="file-selected hidden" id="analysisFileSelected">
+            <span class="file-icon">🎵</span>
+            <span class="file-name" id="analysisFileName"></span>
+            <button class="btn-clear" id="btnAnalysisClear" title="清除选择">✕</button>
+          </div>
+          <button class="btn btn-outline" id="btnAnalysisSelect">选择文件</button>
+        </div>
+
+        <!-- 参考文本输入（可选，传入 whisper 作为 prompt 引导识别，提升时序精度） -->
+        <div class="transcript-input">
+          <label for="transcriptText">参考文本（可选，用于提升识别精度）</label>
+          <input type="text" id="transcriptText"
+            placeholder="输入音频对应的文字内容作为参考，用于精准时序对齐..." />
+          <span class="input-hint">不填则自动识别；填写后 whisper 将以该文本为参考引导识别，时序更精准</span>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="btnAnalyze" disabled>
+            <span id="btnAnalyzeText">开始分析</span>
+            <span class="spinner hidden" id="analysisSpinner"></span>
+          </button>
+        </div>
+
+        <div class="status hidden" id="analysisStatusArea">
+          <div class="status-icon" id="analysisStatusIcon"></div>
+          <div class="status-text" id="analysisStatusText"></div>
+        </div>
+      </div>
+
+      <!-- 图表区域（分析完成后显示） -->
+      <div class="charts-area hidden" id="chartsArea">
+        <!-- 每个图表是一个独立的 chart-section 卡片，内含一个 Canvas -->
+        <div class="chart-section" id="chartWaveformSection">
+          <h3>📊 波形图 (Waveform)</h3>
+          <canvas id="canvasWaveform"></canvas>
+        </div>
+        <div class="chart-section" id="chartSpectrogramSection">
+          <h3>🌈 频谱图 (Spectrogram)</h3>
+          <canvas id="canvasSpectrogram"></canvas>
+        </div>
+        <div class="chart-section" id="chartPitchSection">
+          <h3>🎹 音高曲线 (Pitch)</h3>
+          <canvas id="canvasPitch"></canvas>
+        </div>
+        <div class="chart-section" id="chartLoudnessSection">
+          <h3>🔊 响度曲线 (Loudness)</h3>
+          <canvas id="canvasLoudness"></canvas>
+        </div>
+        <!-- 文字时序图表：仅当用户填写了文字且分析生成了时序数据时才显示 -->
+        <div class="chart-section hidden" id="chartTextSection">
+          <h3>📝 文字时序对齐</h3>
+          <canvas id="canvasTextAlignment"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 主脚本：ES Module 方式加载，作用域隔离 -->
+  <script type="module" src="main.js"></script>
+</body>
+</html>
