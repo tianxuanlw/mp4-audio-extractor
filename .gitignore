@@ -67,3 +67,8 @@ src-tauri/cli/*.pdb
 
 # Nested git repository
 01/
+
+# Development documentation
+*开发文档*.md
+*功能更新*.md
+*当前状况*.md
